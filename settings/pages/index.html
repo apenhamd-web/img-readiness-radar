@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IMG Residency Readiness Radar</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <header class="container">
+        <h1>IMG Residency Readiness Radar</h1>
+        <p class="subtle">
+            Discrete self-assessment for IMGs. Complete the form, click <b>Analyze</b>, and review
+            your radar plot.
+        </p>
+    </header>
+
+    <main class="container grid">
+        <section class="card">
+            <h2>Candidate Profile</h2>
+
+            <div class="field">
+                <label for="specialty">Target specialty</label>
+                <select id="specialty">
+                    <option value="im">Internal Medicine</option>
+                    <option value="fm">Family Medicine</option>
+                    <option value="peds">Pediatrics</option>
+                    <option value="psych">Psychiatry</option>
+                    <option value="neuro">Neurology</option>
+                    <option value="anes">Anesthesiology</option>
+                    <option value="gen_surg">General Surgery</option>
+                    <option value="em">Emergency Medicine</option>
+                    <option value="ortho">Physical Medicine & Rehabilitation</option>
+                    <option value="obgyn">OB/GYN</option>
+                    <option value="rads">Diagnostic Radiology (DR)</option>
+                    <option value="path">Pathology</option>
+                    <option value="derm">Dermatology</option>
+                    <option value="ortho">Orthopedic Surgery</option>
+                    <option value="ortho">Urology</option>
+                    <option value="ortho">Preliminary IM</option>
+                    <option value="ortho">Preliminary GS</option>
+                    <option value="other">Other / Undecided</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="imgType">IMG type</label>
+                <select id="imgType">
+                    <option value="nonus">US IMG</option>
+                    <option value="nonus">Non-US IMG</option>
+                    <option value="nonus_brazil">Non-US IMG (Brazil)</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="graduation">Years since graduation</label>
+                <select id="graduation">
+                    <option value="0">Current student / < 1 year</option>
+                    <option value="1">1–2 years</option>
+                    <option value="2">3–5 years</option>
+                    <option value="3">6–10 years</option>
+                    <option value="4">>10 years</option>
+                </select>
+            </div>
+
+            <hr />
+
+            <h2>Readiness Questions</h2>
+            <p class="subtle">Use the best match. All answers are scored discretely and normalized to 0–100.</p>
+
+            <form id="readinessForm">
+                <div id="questionBlocks"></div>
+
+                <div class="actions">
+                    <button type="button" id="analyzeBtn">Analyze</button>
+                    <button type="button" id="resetBtn" class="secondary">Reset</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Radar Plot</h2>
+            <canvas id="radarChart" width="400" height="400"></canvas>
+
+            <div id="results" class="results">
+                <h3>Summary</h3>
+                <div class="kpis">
+                    <div class="kpi">
+                        <div class="kpi-label">Overall readiness</div>
+                        <div class="kpi-value" id="overallScore">—</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="kpi-label">Competitiveness adjustment</div>
+                        <div class="kpi-value" id="compAdj">—</div>
+                    </div>
+                </div>
+
+                <h3>Dimension Scores</h3>
+                <div id="dimensionTable"></div>
+
+                <h3>Action Priorities</h3>
+                <ol id="priorities"></ol>
+
+                <hr style="margin: 20px 0; border-top: 1px solid var(--border);" />
+
+                <h3>Mentor Notes</h3>
+                <textarea id="mentorNotes" rows="4"
+                    style="width:100%; background:var(--card); color:var(--text); border:1px solid var(--border); padding:10px; border-radius:8px; font-family:inherit;"
+                    placeholder="Add specific feedback or next steps for the candidate here..."></textarea>
+
+                <div class="exportRow">
+                    <button type="button" id="downloadJsonBtn" class="secondary">Download JSON</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="container footer">
+        <p class="subtle">
+            Educational tool for mentoring. Not affiliated with NRMP/ACGME. Use for structured coaching conversations.
+        </p>
+    </footer>
+
+    <script type="module" src="assets/app.js"></script>
+</body>
+
+</html>
