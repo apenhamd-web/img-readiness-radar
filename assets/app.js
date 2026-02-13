@@ -305,6 +305,54 @@ function initDimensionAccumulator() {
   return acc;
 }
 
+// Map new candidate background fields to a 0..100 backgroundScore.
+// Rubric (max 100 points total, split evenly across 5 categories):
+// - Volunteering (0..20)
+// - Work experience (0..20)
+// - Research time (0..20)
+// - Advanced degrees (0..20)
+// - Timeline expectation (0..20)
+function mapBackgroundScore() {
+  // Volunteering
+  const vol = document.getElementById("volunteering")?.value;
+  const volMap = { none: 0, lt6m: 5, "6to12m": 10, "1to2y": 15, gt2y: 20 };
+  const volPts = volMap[vol] ?? 0;
+
+  // Work experience
+  const work = document.getElementById("workExperience")?.value;
+  const workMap = { none: 0, lt1y: 5, "1to3y": 10, gt3y: 20 };
+  const workPts = workMap[work] ?? 0;
+
+  // Research time
+  const res = document.getElementById("researchTime")?.value;
+  const resMap = { none: 0, lt6m: 5, "6to12m": 10, "1to2y": 15, gt2y: 20 };
+  const resPts = resMap[res] ?? 0;
+
+  // Advanced degrees (checkboxes) - assign points per degree up to 20
+  const degIds = ["degree_phd", "degree_master", "degree_mph", "degree_other"];  
+  let degCount = 0;
+  degIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.checked) degCount += 1;
+  });
+  // Map: 0 -> 0, 1 -> 10, 2 -> 15, 3+ -> 20
+  let degPts = 0;
+  if (degCount === 1) degPts = 10;
+  else if (degCount === 2) degPts = 15;
+  else if (degCount >= 3) degPts = 20;
+
+  // Timeline expectation
+  const t = document.getElementById("timelineExpect")?.value;
+  const tMap = { immediate: 20, "6to12m": 15, "1to2y": 10, gt2y: 5, undecided: 0 };
+  const tPts = tMap[t] ?? 0;
+
+  const total = volPts + workPts + resPts + degPts + tPts; // 0..100
+  return {
+    backgroundPoints: total,
+    backgroundScore: Math.round(Math.max(0, Math.min(100, total)))
+  };
+}
+
 function scoreForm() {
   const acc = initDimensionAccumulator();
 
@@ -325,19 +373,23 @@ function scoreForm() {
     dimScores[d.key] = possible === 0 ? 0 : Math.round((earned / possible) * 100);
   });
 
+  // Compute background score from new fields
+  const { backgroundPoints, backgroundScore } = mapBackgroundScore();
+
   // Competitiveness adjustment on overall score (simple, transparent):
-  // overall_raw = mean of dimension scores
-  // overall_adj = overall_raw / specialty_factor, capped 0..100
-  const overallRaw = Math.round(
+  // Combine mean of radar dimensions with backgroundScore (equal weighting):
+  const meanDim = Math.round(
     DIMENSIONS.reduce((sum, d) => sum + dimScores[d.key], 0) / DIMENSIONS.length
   );
+
+  const combinedRaw = Math.round((meanDim + backgroundScore) / 2);
 
   const specialty = document.getElementById("specialty").value;
   const factor = SPECIALTY_FACTOR[specialty] ?? 1.1;
 
-  const overallAdj = Math.max(0, Math.min(100, Math.round(overallRaw / factor)));
+  const overallAdj = Math.max(0, Math.min(100, Math.round(combinedRaw / factor)));
 
-  return { dimScores, overallRaw, overallAdj, factor };
+  return { dimScores, meanDim, backgroundScore, combinedRaw, overallAdj, factor };
 }
 
 // =========================
@@ -488,7 +540,7 @@ function downloadJson(payload) {
 // 10) Wire up buttons
 // =========================
 document.getElementById("analyzeBtn").addEventListener("click", () => {
-  const { dimScores, overallRaw, overallAdj, factor } = scoreForm();
+  const { dimScores, meanDim, backgroundScore, combinedRaw, overallAdj, factor } = scoreForm();
 
   renderChart(dimScores);
   renderDimensionTable(dimScores);
@@ -499,17 +551,33 @@ document.getElementById("analyzeBtn").addEventListener("click", () => {
   const priorities = buildPriorities(dimScores);
   renderPriorities(priorities);
 
+  // Build profile export including the new fields
+  const degrees = [];
+  ["degree_phd", "degree_master", "degree_mph", "degree_other"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.checked) degrees.push(el.value || id);
+  });
+
+  const profileObj = {
+    specialty: document.getElementById("specialty").value,
+    imgType: document.getElementById("imgType").value,
+    yearsSinceGradBand: document.getElementById("graduation").value,
+    volunteering: document.getElementById("volunteering").value,
+    workExperience: document.getElementById("workExperience").value,
+    researchTime: document.getElementById("researchTime").value,
+    advancedDegrees: degrees,
+    timelineExpect: document.getElementById("timelineExpect").value
+  };
+
   // Store latest result for export
   window.__latestPayload = {
     timestamp: new Date().toISOString(),
-    profile: {
-      specialty: document.getElementById("specialty").value,
-      imgType: document.getElementById("imgType").value,
-      yearsSinceGradBand: document.getElementById("graduation").value
-    },
+    profile: profileObj,
     scores: {
       byDimension: dimScores,
-      overallRaw,
+      meanDimensionScore: meanDim,
+      backgroundScore,
+      combinedRaw,
       overallAdjusted: overallAdj,
       competitivenessFactor: factor
     }
